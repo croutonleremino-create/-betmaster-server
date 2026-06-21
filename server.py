@@ -105,7 +105,34 @@ def bot():
 
     if invite_link:
         tg("sendMessage", chat_id=chat_id,
-           text=f"Abonnement verifie ! Bienvenue dans BetMaster VIP\n\nTon lien d'acces (usage unique) :\n{invite_link}")
+           text=f"✅ Abonnement verifie !\n\nVoici ton lien d'acces au canal prive (usage unique) :\n{invite_link}")
+
+        MESSAGE_BIENVENUE = """🎯 *Bienvenue sur BetMaster VIP !* 🎯
+
+Si tu es ici, ce n'est pas par hasard.
+
+Ce canal a un seul objectif : t'aider à adopter le bon état d'esprit pour parier intelligemment et gérer ton bankroll comme un pro. ⚽🏀🎾
+
+Tu y trouveras :
+✅ Des analyses de matchs et des pronostics
+✅ Des stratégies de gestion de bankroll
+✅ Un mindset de parieur discipliné
+✅ De la motivation au quotidien
+✅ Des conseils pour passer à l'action sans tilt
+
+Le succès dans les paris ne tombe pas du ciel. Il se construit avec de la *discipline*, de la *patience* et les *bonnes décisions*. 📈
+
+Mon objectif est de partager avec toi des analyses concrètes, des opportunités value et des conseils pour progresser, un pari après l'autre.
+
+📲 *Rejoins-moi aussi sur Instagram :* @Odessy\\_Bet pour encore plus de contenu, de stories et de pronos exclusifs !
+
+Le meilleur moment pour commencer, c'est maintenant. ⏳
+
+Ensemble, avançons vers une approche plus rentable et maîtrisée. 💪
+
+🔞 *Les paris comportent des risques. Ne mise que ce que tu peux te permettre de perdre. Jouer comporte des risques : endettement, isolement, dépendance. Appelez le 09 74 75 13 13 (appel non surtaxé).*"""
+
+        tg("sendMessage", chat_id=chat_id, text=MESSAGE_BIENVENUE, parse_mode="Markdown")
     else:
         tg("sendMessage", chat_id=chat_id,
            text="Une erreur est survenue. Contacte le support.")
