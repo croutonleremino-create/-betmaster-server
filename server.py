@@ -11,6 +11,8 @@ import stripe
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
+from scheduler import start_scheduler
+start_scheduler()
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 TELEGRAM_CHANNEL_ID = os.environ["TELEGRAM_CHANNEL_ID"]
