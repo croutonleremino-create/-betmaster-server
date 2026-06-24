@@ -276,32 +276,16 @@ def job_check_compos():
                 prompt = f"""Le match {equipe1} vs {equipe2} ({nom_ligue}) commence dans {int(minutes_restantes)} minutes ({heure}).
 Cotes bookmakers : {cotes if cotes else 'non disponibles'}
 
-Tu es un analyste sportif expert. Base-toi sur la forme recente, les stats et les confrontations directes.
+Utilise EXACTEMENT ce format, rien de plus :
 
-Utilise ce format :
+🚨 {equipe1} vs {equipe2} | {heure}
+🏆 Vainqueur : [equipe gagnante ou Match Nul]
+💰 Cote : [cote reelle si dispo, sinon ~estimee]
+⚡ Confiance : [Elevee / Moyenne / Faible]
 
-🚨 ALERTE PRE-MATCH
-{equipe1} vs {equipe2} | {heure} | {nom_ligue}
-
-👥 Compos probables
-{equipe1} : [11 joueurs cles probables]
-{equipe2} : [11 joueurs cles probables]
-
-📋 Analyse rapide
-[2 phrases max]
-
-🟢 Safe — [pari simple]
-Cote : [vraie cote si dispo, sinon ~estimee] | ✅ Confiance Elevee
-🟡 Combine — [resultat + tir cadre ou Over 1.5 buts]
-Cote : ~[estimee] | ⚡ Confiance Moyenne
-🔴 Boost — [resultat + buteur + Over 2.5 buts ou corners]
-Cote : ~[estimee] | 🎯 Confiance Faible
-⚽ Paris joueurs : [Joueur 1] buteur ~X.XX | [Joueur 2] but/passe ~X.XX | Over 2.5 buts [cote] | Over 9.5 corners ~X.XX
-
-📊 Cotes 1X2 et totaux : bookmakers en temps reel. Cotes joueurs/corners : estimees.
 ⚠️ Pari responsable. 18+
 
-Ecris en francais, reste court et impactant."""
+Ecris en francais, sois ultra court."""
 
                 try:
                     analyse = groq_chat(prompt, max_tokens=1200)
@@ -489,4 +473,6 @@ def start_scheduler():
     print("Scheduler demarre. Jobs actifs :")
     for job in scheduler.get_jobs():
         print(f"  - {job.id} : {job.next_run_time}")
+    return scheduler
+
     return scheduler
