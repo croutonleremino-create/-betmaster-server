@@ -2,3 +2,6 @@ flask
 stripe
 requests
 gunicorn
+groq
+apscheduler
+python-dotenv
