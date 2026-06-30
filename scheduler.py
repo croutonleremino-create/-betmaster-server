@@ -130,30 +130,24 @@ def job_pronostics():
 
     prompt = f"""Tu es un analyste sportif expert. Nous sommes le {aujourd_hui.strftime('%d/%m/%Y')}.
 
-MATCHS DE FOOTBALL AUJOURD'HUI :
+MATCHS DU JOUR :
 {liste_foot}
 
 {f'AUTRES SPORTS :{chr(10)}{liste_autres}' if liste_autres else ''}
 
-{cotes}
+Fais une presentation courte et percutante des matchs du jour. PAS DE PARIS, PAS DE COTES.
+Juste :
+- Le contexte de chaque match (enjeu, forme recente, rivalite)
+- 1 info marquante ou actu sur les equipes (blessure, suspension, statistique)
+- Ce qui rend ce match interessant a regarder
 
-Pour chaque match de football, utilise ce format :
+Format pour chaque match :
+⚽ [Equipe A] vs [Equipe B] | [heure]
+[2-3 phrases max : contexte + info cle + pourquoi c'est interessant]
 
-⚽ [Equipe A] vs [Equipe B] | [heure] | [Ligue]
-📋 [1-2 phrases : forme recente, stats cles, contexte]
-🟢 Safe — [pari simple]
-Cote : [vraie cote si dispo, sinon ~estimee] | ✅ Confiance Elevee
-🟡 Combine — [resultat + tir cadre ou Over 1.5 buts]
-Cote : ~[estimee] | ⚡ Confiance Moyenne
-🔴 Boost — [resultat + buteur + Over 2.5 buts ou corners]
-Cote : ~[estimee] | 🎯 Confiance Faible
-⚽ Paris joueurs : [Joueur 1] buteur ~X.XX | [Joueur 2] but/passe ~X.XX | Over 2.5 buts [cote] | Over 9.5 corners ~X.XX
-
-Commence par : "🏆 Pronostics BetMaster VIP - {aujourd_hui.strftime('%d/%m/%Y')}"
-Termine par :
-"📊 Cotes 1X2 et totaux : bookmakers en temps reel. Cotes joueurs/corners : estimees.
-⚠️ Pari responsable. 18+"
-Ecris en francais."""
+Commence par : "🗞️ Programme BetMaster VIP - {aujourd_hui.strftime('%d/%m/%Y')}"
+Termine par : "⚡ Les alertes paris arrivent 1h avant chaque match !"
+Ecris en francais, sois dynamique et court."""
 
     try:
         analyse = groq_chat(prompt, max_tokens=4000)
@@ -176,12 +170,6 @@ def job_recap_quotidien():
     print(f"[{datetime.datetime.utcnow()}] Job recap quotidien...")
     hier = (aujourd_hui_paris() - datetime.timedelta(days=1))
 
-    try:
-        hist = json.load(open(HISTORIQUE_FILE)) if os.path.exists(HISTORIQUE_FILE) else {}
-        analyse_hier = hist.get(hier.isoformat(), {}).get("analyse", "")
-    except Exception:
-        analyse_hier = ""
-
     # Resultats ESPN d'hier
     resultats = []
     for slug, ligue in COMPETITIONS_FOOT:
@@ -190,35 +178,46 @@ def job_recap_quotidien():
                 f"https://site.api.espn.com/apis/site/v2/sports/soccer/{slug}/scoreboard",
                 params={"dates": hier.strftime("%Y%m%d")}, timeout=10)
             for e in r.json().get("events", []):
-                if e.get("status", {}).get("type", {}).get("state") == "post":
-                    nom = e.get("name", "")
-                    score = e.get("competitions", [{}])[0].get("score", "")
-                    resultats.append(f"{nom} : {score}")
+                comps = e.get("competitions", [{}])
+                etat = e.get("status", {}).get("type", {}).get("state", "")
+                if etat != "post":
+                    continue
+                competitors = comps[0].get("competitors", []) if comps else []
+                scores = {c.get("homeAway"): (c.get("team", {}).get("displayName", ""), c.get("score", "0")) for c in competitors}
+                home_name, home_score = scores.get("home", ("", "0"))
+                away_name, away_score = scores.get("away", ("", "0"))
+                if home_name and away_name:
+                    resultats.append(f"{home_name} {home_score} - {away_score} {away_name} ({ligue})")
         except Exception:
             pass
 
-    if not resultats and not analyse_hier:
-        print("Rien a recapituler.")
+    if not resultats:
+        print("Pas de resultats hier.")
         return
 
-    prompt = f"""Tu es un analyste sportif. Recap des resultats d'hier ({hier.strftime('%d/%m/%Y')}).
+    prompt = f"""Tu es un analyste sportif. Voici les resultats des matchs d'hier ({hier.strftime('%d/%m/%Y')}) :
 
-Pronostics d'hier :
-{analyse_hier[:2000] if analyse_hier else 'Non disponibles'}
+{chr(10).join(resultats)}
 
-Resultats reels :
-{chr(10).join(resultats) if resultats else 'Non disponibles'}
+Fais le recap des paris d'hier. Pour chaque match, evalue si les paris classiques ont fonctionne :
+- Le pari SAFE (victoire du favori) : ✅ passe ou ❌ rate + la cote estimee
+- Le Bet Builder (favori + over 1.5 buts) : ✅ passe ou ❌ rate + la cote estimee
 
-Fais un recap court :
-- Pour chaque match : ✅ ou ❌ selon le pronostic
-- Win rate du jour (ex: 3/5 = 60%)
-- 1 phrase de conclusion
+Format pour chaque match :
+⚽ [Equipe A] X-X [Equipe B]
+✅ ou ❌ Safe — [Victoire X] @ ~[cote]
+✅ ou ❌ Bet Builder — [Victoire X + Over 1.5 buts] @ ~[cote]
 
-Commence par : "📊 RECAP DU {hier.strftime('%d/%m/%Y')}"
-Ecris en francais, sois bref."""
+A la fin :
+📈 Win rate du jour : X/X paris passes (XX%)
+[1 phrase de conclusion + motivation pour aujourd'hui]
+
+Commence EXACTEMENT par : "📊 RECAP DU {hier.strftime('%d/%m/%Y')}"
+Termine par : "⚡ Nouvelles alertes ce soir, restez connectes !"
+Ecris en francais, sois bref et percutant."""
 
     try:
-        recap = groq_chat(prompt, max_tokens=800)
+        recap = groq_chat(prompt, max_tokens=600)
         envoyer_telegram(recap)
         print("Recap quotidien envoye.")
     except Exception as e:
@@ -273,23 +272,28 @@ def job_check_compos():
                 heure = dt_paris.strftime("%H:%M")
                 cotes = recuperer_cotes_match(equipe1, equipe2)
 
-                prompt = f"""Le match {equipe1} vs {equipe2} ({nom_ligue}) commence dans {int(minutes_restantes)} minutes ({heure}).
-Cotes bookmakers : {cotes if cotes else 'non disponibles'}
+                prompt1 = f"""Match : {equipe1} vs {equipe2} ({nom_ligue}) dans {int(minutes_restantes)} min a {heure}.
+Cotes reelles : {cotes if cotes else 'non disponibles'}
 
-Utilise EXACTEMENT ce format, rien de plus :
+Reponds UNIQUEMENT avec ce bloc exact, remplace les crochets, ne rajoute RIEN d'autre :
 
 🚨 {equipe1} vs {equipe2} | {heure}
+
 🏆 Vainqueur : [equipe gagnante ou Match Nul]
-💰 Cote : [cote reelle si dispo, sinon ~estimee]
+💰 Cote : [cote 1X2 reelle si dispo, sinon ~estimee]
 ⚡ Confiance : [Elevee / Moyenne / Faible]
 
-⚠️ Pari responsable. 18+
+🔨 Bet Builder
+🏆 [Vainqueur] + [CHOISIS 1 : "Plus de X.5 buts" OU "[Joueur cle] passeur" OU "[Joueur cle] buteur"]
+💰 Cote estimee : ~[X.XX]
+⚡ Confiance : [Elevee / Moyenne / Faible]
 
-Ecris en francais, sois ultra court."""
+💼 Ne risquez jamais plus de 2-5% de votre bankroll sur un seul pari.
+⚠️ Pari responsable. 18+"""
 
                 try:
-                    analyse = groq_chat(prompt, max_tokens=1200)
-                    envoyer_telegram(analyse)
+                    alerte = groq_chat(prompt1, max_tokens=200)
+                    envoyer_telegram(alerte)
                     alertes[event_id] = aujourd_hui.isoformat()
                     json.dump(alertes, open(ALERTES_FILE, "w"))
                     print(f"Alerte envoyee : {equipe1} vs {equipe2}")
@@ -301,6 +305,28 @@ Ecris en francais, sois ultra court."""
 
 
 # ─── JOB 4 : RECAP SEMAINE (dimanche 20h Paris) ──────────────────────────────
+
+def job_promo_propfirm():
+    print(f"[{datetime.datetime.utcnow()}] Job promo propfirm...")
+    message = """💼 TU VEUX PARIER AVEC UN GROS CAPITAL SANS RISQUER TON ARGENT ?
+
+Prime Sports Funded te permet de gérer un compte allant de 5 000$ à 100 000$ sur les paris sportifs — sans mettre un seul euro de ta poche.
+
+Comment ça marche ?
+✅ Tu passes un challenge avec de l'argent virtuel
+✅ Tu prouves que tu sais gérer un bankroll
+✅ On te finance avec un vrai capital (5k$ à 100k$)
+✅ Tu gardes jusqu'à 90% de tes profits
+✅ Retraits rapides 24/7
+
+C'est la plateforme pensée pour les parieurs sérieux et disciplinés. Si tu suis nos pronostics et que tu gères bien ton capital, tu as tout ce qu'il faut pour réussir le challenge.
+
+🔗 Tente ta chance ici : https://primesportsfunded.com/?ref=PSF-2JEPFW
+
+⚠️ Les paris sportifs comportent des risques. Jouez de manière responsable. 18+"""
+    envoyer_telegram(message)
+    print("Promo propfirm envoyee.")
+
 
 def job_recap_semaine():
     print(f"[{datetime.datetime.utcnow()}] Job recap semaine...")
@@ -469,10 +495,11 @@ def start_scheduler():
     # Dimanche 20h00 Paris = 18h00 UTC
     scheduler.add_job(job_recap_semaine, "cron", day_of_week="sun", hour=18, minute=0, id="recap_semaine")
 
+    # Mercredi 12h00 Paris = 10h00 UTC
+    scheduler.add_job(job_promo_propfirm, "cron", day_of_week="wed", hour=10, minute=0, id="promo_propfirm")
+
     scheduler.start()
     print("Scheduler demarre. Jobs actifs :")
     for job in scheduler.get_jobs():
         print(f"  - {job.id} : {job.next_run_time}")
-    return scheduler
-
     return scheduler
