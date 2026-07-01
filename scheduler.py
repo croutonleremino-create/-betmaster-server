@@ -279,12 +279,16 @@ Reponds UNIQUEMENT avec ce bloc exact, remplace les crochets, ne rajoute RIEN d'
 
 🚨 {equipe1} vs {equipe2} | {heure}
 
-🏆 Vainqueur : [equipe gagnante ou Match Nul]
+🏆 Vainqueur 90 min : [equipe gagnante ou Match Nul]
 💰 Cote : [cote 1X2 reelle si dispo, sinon ~estimee]
 ⚡ Confiance : [Elevee / Moyenne / Faible]
 
+🎯 Qualification (prolongations/penalties inclus) : [equipe qui se qualifie]
+💰 Cote qualification : ~[X.XX]
+⚡ Confiance : [Elevee / Moyenne / Faible]
+
 🔨 Bet Builder
-🏆 [Vainqueur] + [CHOISIS 1 : "Plus de X.5 buts" OU "[Joueur cle] passeur" OU "[Joueur cle] buteur"]
+🏆 [equipe qui se qualifie] + [CHOISIS 1 : "Plus de X.5 buts" OU "[Joueur cle] passeur" OU "[Joueur cle] buteur"]
 💰 Cote estimee : ~[X.XX]
 ⚡ Confiance : [Elevee / Moyenne / Faible]
 
